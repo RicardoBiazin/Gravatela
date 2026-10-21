@@ -3,6 +3,7 @@
     python app.py                          abre a janela
     python app.py --gravar 10              grava 10 s da tela principal com o áudio padrão
     python app.py --gravar 10 --sem-audio --saida teste.mp4 --fps 60 --codificador cpu
+    python app.py --gravar 10 --microfone --regiao 100,100,1280,720
     python app.py --listar                 telas, saídas de áudio e codificadores
     python app.py --versao
     python app.py --autoverificacao        grava 2 s num arquivo temporário e confere (usado no build)
@@ -29,7 +30,7 @@ def _escrever(texto: str) -> None:
 
 
 def listar() -> None:
-    from gravatela.audio import listar_saidas
+    from gravatela.audio import listar_microfones, listar_saidas
     from gravatela.codificador import HARDWARE, NOMES, codificador_funciona
     from gravatela.tela import listar_monitores
     _escrever("Telas:")
@@ -38,28 +39,46 @@ def listar() -> None:
     _escrever("Áudio do PC:")
     for s in listar_saidas():
         _escrever(f"  {s.indice}: {s.descricao} ({s.taxa} Hz, {s.canais} canais)")
+    _escrever("Microfones:")
+    for m in listar_microfones():
+        _escrever(f"  {m.indice}: {m.descricao} ({m.taxa} Hz, {m.canais} canais)")
     _escrever("Codificadores:")
     for nome in (*HARDWARE, "libx264"):
         _escrever(f"  {NOMES[nome]}: {'disponível' if codificador_funciona(nome) else 'não disponível'}")
 
 
-def gravar(segundos: float, saida: str | None, tela: int, fps: int, com_audio: bool, codificador: str):
-    from gravatela.audio import saida_padrao
+def gravar(segundos: float, saida: str | None, tela: int, fps: int, com_audio: bool, codificador: str,
+           microfone: bool = False, regiao: str | None = None, pausa: tuple[float, float] | None = None):
+    """pausa = (aos quantos segundos pausar, por quantos segundos); usado na autoverificação."""
+    from gravatela.audio import microfone_padrao, saida_padrao
     from gravatela.gravador import Gravador
-    from gravatela.interface import pasta_padrao
+    from gravatela.interface import area_de_texto, pasta_padrao
     from gravatela.tela import listar_monitores
-    monitores = listar_monitores()
-    if not 0 <= tela < len(monitores):
-        raise SystemExit(f"tela {tela} não existe (há {len(monitores)})")
+    if regiao:
+        area = area_de_texto(regiao)
+        if area is None:
+            raise SystemExit(f"região inválida: {regiao!r} (use X,Y,LARGURA,ALTURA)")
+    else:
+        monitores = listar_monitores()
+        if not 0 <= tela < len(monitores):
+            raise SystemExit(f"tela {tela} não existe (há {len(monitores)})")
+        area = monitores[tela]
+    mic = microfone_padrao() if microfone else None
+    if microfone and mic is None:
+        raise SystemExit("nenhum microfone encontrado")
     if saida is None:
         Path(pasta_padrao()).mkdir(parents=True, exist_ok=True)
         saida = str(Path(pasta_padrao()) / f"{NOME}_{datetime.now():%Y-%m-%d_%H-%M-%S}.mp4")
-    g = Gravador(saida, monitores[tela], fps, saida_padrao() if com_audio else None, codificador)
+    g = Gravador(saida, area, fps, saida_padrao() if com_audio else None, codificador, microfone=mic)
     g.iniciar()
     try:
-        fim = time.perf_counter() + segundos
-        while time.perf_counter() < fim and not g.erro:
-            time.sleep(0.05)
+        while g.segundos < segundos and not g.erro:
+            if pausa and not g.pausado and pausa[0] <= g.segundos < pausa[0] + 0.5:
+                g.pausar()
+                time.sleep(pausa[1])
+                g.continuar()
+                pausa = None
+            time.sleep(0.02)
     finally:
         resumo = g.parar()
     if g.erro:
@@ -76,14 +95,15 @@ def autoverificacao() -> int:
         ativar_dpi()
         com_audio = saida_padrao() is not None
         destino = Path(tempfile.mkdtemp(prefix="gravatela_")) / "auto.mp4"
-        r = gravar(2, str(destino), 0, 30, com_audio, "auto")
+        # Com uma pausa de 1 s no meio: o arquivo tem de sair com 2 s, não 3.
+        r = gravar(2, str(destino), 0, 30, com_audio, "auto", pausa=(1.0, 1.0))
         linhas.append(f"gravou {r.segundos:.2f} s, {r.quadros} quadros, {r.codificador}, áudio={r.com_audio}")
         with av.open(str(destino)) as f:
             tipos = {s.type: s for s in f.streams}
             assert "video" in tipos, "arquivo sem vídeo"
             v = tipos["video"]
             dur_v = float(v.duration * v.time_base)
-            assert dur_v > 1.5, f"vídeo curto demais: {dur_v:.2f} s"
+            assert 1.5 < dur_v < 2.5, f"vídeo com {dur_v:.2f} s (esperado ~2 s com a pausa descontada)"
             linhas.append(f"vídeo {v.codec_context.name} {v.width}x{v.height} {dur_v:.2f} s")
             if com_audio:
                 assert "audio" in tipos, "arquivo sem áudio"
@@ -122,7 +142,9 @@ def main(argv=None) -> int:
     ap.add_argument("--saida", help="arquivo .mp4 (padrão: Vídeos\\Gravatela)")
     ap.add_argument("--tela", type=int, default=0, help="índice da tela (veja --listar)")
     ap.add_argument("--fps", type=int, default=30)
-    ap.add_argument("--sem-audio", action="store_true")
+    ap.add_argument("--sem-audio", action="store_true", help="sem o áudio do PC")
+    ap.add_argument("--microfone", action="store_true", help="grava também o microfone padrão")
+    ap.add_argument("--regiao", metavar="X,Y,L,A", help="grava só esta área (pixels físicos)")
     ap.add_argument("--codificador", default="auto", help="auto, cpu, h264_nvenc, h264_qsv ou h264_amf")
     args = ap.parse_args(argv)
 
@@ -137,7 +159,8 @@ def main(argv=None) -> int:
         if args.listar:
             listar()
             return 0
-        r = gravar(args.gravar, args.saida, args.tela, args.fps, not args.sem_audio, args.codificador)
+        r = gravar(args.gravar, args.saida, args.tela, args.fps, not args.sem_audio, args.codificador,
+                   args.microfone, args.regiao)
         _escrever(f"Salvo: {r.caminho} ({r.segundos:.1f} s, {r.quadros} quadros, {r.descartados} descartados, "
                   f"{r.codificador}, áudio={'sim' if r.com_audio else 'não'})")
         return 0
