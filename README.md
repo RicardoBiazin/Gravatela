@@ -70,9 +70,11 @@ build.bat
 
 ## Versão web
 
-https://gravatela.biazin.com.br. A pasta é `web/`: Vite + TypeScript, site estático no Netlify.
+https://gravatela.biazin.com.br. A pasta é `web/`: Vite + TypeScript, site estático no Netlify (projeto `gravatela-212`; o endereço `gravatela-212.netlify.app` redireciona para o domínio).
 
-A gravação acontece inteira no navegador, com `getDisplayMedia` + `MediaRecorder`. Nenhum vídeo passa por servidor. A versão web tem quase tudo do desktop: áudio do PC, microfone mixado (WebAudio), pausa, área da tela, fluidez e cursor.
+A gravação acontece inteira no navegador, com `getDisplayMedia` + `MediaRecorder`. Nenhum vídeo passa por servidor.
+
+**Portão anti-robô.** É uma Edge Function do Netlify (`web/netlify/edge-functions/portao.ts`, a mesma do ValidaURL). Quem chega sem o cookie `gt_passe` recebe uma página em que o navegador resolve uma prova de trabalho (~1 s) e ganha o cookie, que vale 7 dias e só para aquele navegador. Pedido de arquivo sem o cookie leva 403. Não usa serviço de terceiros. O site também fica fora dos buscadores (`robots.txt` e `noindex`). O segredo fica na variável `PORTAO_SEGREDO` do Netlify; sem ela, o site publicado responde 500 de propósito. A versão web tem quase tudo do desktop: áudio do PC, microfone mixado (WebAudio), pausa, área da tela, fluidez e cursor.
 
 **Diferenças em relação ao desktop:**
 - **Áudio do PC:**

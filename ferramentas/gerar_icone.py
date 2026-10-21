@@ -57,6 +57,8 @@ def main() -> int:
     if publico.parent.is_dir():
         publico.mkdir(exist_ok=True)
         (publico / "favicon.svg").write_text(SVG, encoding="utf-8")
+        # O navegador pede /favicon.ico sozinho; sem ele, a página do portão loga um 404.
+        (publico / "favicon.ico").write_bytes(destino.read_bytes())
     print(destino)
     return 0
 

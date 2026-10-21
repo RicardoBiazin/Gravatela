@@ -1,7 +1,7 @@
 {
   "name": "gravatela-web",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Gravatela no navegador: grava a tela com o áudio do PC e o microfone, sem enviar nada para servidor.",
   "license": "MIT",
   "type": "module",

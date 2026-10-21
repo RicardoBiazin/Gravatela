@@ -14,6 +14,7 @@
 
 import { execFileSync, spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { get } from "node:https";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -124,8 +125,24 @@ try {
   await cdp("Runtime.enable");
   await cdp("Log.enable");
   await cdp("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: downloads });
+  if (arg("url")) {
+    // Site publicado: sem o cookie do portão, robô leva a página do desafio e arquivo leva 403.
+    // O fetch do Node sempre manda sec-fetch-mode: cors; para simular uma navegação, https.get.
+    const html = await new Promise((res, no) => {
+      get(URL_APP, { headers: { accept: "text/html", "sec-fetch-mode": "navigate" } }, (r) => {
+        let corpo = "";
+        r.setEncoding("utf8");
+        r.on("data", (d) => (corpo += d));
+        r.on("end", () => res(corpo));
+      }).on("error", no);
+    });
+    ok(/Verificando que você não é um robô/.test(html), "portão anti-robô na entrada");
+    const js = await fetch(new URL("assets/", URL_APP), { headers: { "sec-fetch-mode": "cors" } });
+    ok(js.status === 403, `arquivo sem passe recusado (${js.status})`);
+  }
   await cdp("Page.navigate", { url: URL_APP });
-  ok(await aguardar("!!document.getElementById('versao')?.textContent", 30000), "app carregou");
+  // O portão (se houver) resolve a prova de trabalho e recarrega sozinho.
+  ok(await aguardar("!!document.getElementById('versao')?.textContent", 60000), "app carregou (portão resolvido, se houver)");
   ok(await avaliar("document.getElementById('versao').textContent") === versao, `versão ${versao} na tela`);
   ok(await avaliar("!document.getElementById('bt-gravar').disabled"), "botão Gravar habilitado");
   const mp4 = await avaliar("MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.640028,mp4a.40.2')");

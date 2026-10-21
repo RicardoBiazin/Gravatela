@@ -1,5 +1,10 @@
-# Gravatela (web) no Netlify: site estático, sem Functions.
+# Gravatela (web) no Netlify: site estático + Edge Function do portão anti-robô.
 # A gravação acontece inteira no navegador; nenhum vídeo passa pelo servidor.
+#
+# Variáveis no painel do Netlify:
+#   PORTAO_SEGREDO        (obrigatória; sem ela o site responde 500 de propósito)
+#   REDIRECIONAR_DOMINIO  ("1" depois que gravatela.biazin.com.br estiver no ar:
+#                          o gravatela-212.netlify.app passa a redirecionar com 301)
 
 [build]
   command = "npm run build"
@@ -7,6 +12,10 @@
 
 [build.environment]
   NODE_VERSION = "24"
+
+[[edge_functions]]
+  function = "portao"
+  path = "/*"
 
 [[headers]]
   for = "/*"
@@ -18,6 +27,7 @@
     Permissions-Policy = "display-capture=(self), microphone=(self), camera=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()"
     Cross-Origin-Opener-Policy = "same-origin"
     Strict-Transport-Security = "max-age=31536000"
+    X-Robots-Tag = "noindex, nofollow"
 
 [[headers]]
   for = "/assets/*"
