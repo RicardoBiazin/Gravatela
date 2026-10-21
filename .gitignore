@@ -1,0 +1,12 @@
+# Ambiente
+.venv/
+__pycache__/
+*.pyc
+
+# Build
+build/
+dist/
+dist-*/
+
+# Gravações de teste
+*.mp4
