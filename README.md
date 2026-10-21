@@ -11,7 +11,7 @@ Grava a tela do Windows junto com o áudio que sai do PC (o que toca nos alto-fa
 - Ao começar a gravar, a janela minimiza. Um ícone na bandeja mostra o tempo de gravação, e clicar nele para a gravação.
 - As gravações vão para `Vídeos\Gravatela`, com nome `Gravatela_AAAA-MM-DD_HH-MM-SS.mp4`.
 
-Só Windows 10/11 (64 bits).
+Só Windows 10/11 (64 bits). Há também uma **versão web**: https://gravatela.biazin.com.br (veja [abaixo](#versão-web)).
 
 ## Uso
 
@@ -67,6 +67,32 @@ build.bat
 - **Teste do atalho.** Um dos testes abre por 2 s uma janela de verdade. Ele confere se o atalho fica registrado no Windows, se a mensagem chega à janela e se fechar a janela libera o atalho.
 - **Build.** O `build.bat` roda a suíte, gera `dist\Gravatela.exe` e executa `Gravatela.exe --autoverificacao`. Essa autoverificação grava 2 s num arquivo temporário, com 1 s de pausa no meio, e confere a duração do vídeo e do áudio. O log fica em `%TEMP%\gravatela_autoverificacao.log`.
 - **Versão.** A versão fica em três lugares: `gravatela/__init__.py`, `versao.txt` e `Gravatela.manifest`. Um teste confere se os três batem.
+
+## Versão web
+
+https://gravatela.biazin.com.br. A pasta é `web/`: Vite + TypeScript, site estático no Netlify.
+
+A gravação acontece inteira no navegador, com `getDisplayMedia` + `MediaRecorder`. Nenhum vídeo passa por servidor. A versão web tem quase tudo do desktop: áudio do PC, microfone mixado (WebAudio), pausa, área da tela, fluidez e cursor.
+
+**Diferenças em relação ao desktop:**
+- **Áudio do PC:**
+  - No Chrome e no Edge, só vem quando você escolhe **Tela inteira** (ou uma aba) e marca **Compartilhar áudio do sistema**.
+  - No Firefox e no Safari, não vem.
+- **Atalhos:** Ctrl+Shift+F9 e F10 só funcionam com a aba do Gravatela em foco.
+- **Formato:** MP4 (H.264/AAC) no Chrome e no Edge; WebM onde o navegador não grava MP4.
+- **Área:** é recortada com `MediaStreamTrackProcessor`. No Firefox, que não tem essa API, o recorte vai por `<canvas>`, e a aba precisa ficar visível durante a gravação.
+- **Memória:** a gravação fica na memória até você parar.
+
+```
+cd web
+npm install
+npm test               funções puras (node --test)
+npm run typecheck
+npm run build
+npm run preview        http://localhost:4180 (mesmos cabeçalhos do netlify.toml)
+npm run fumaca         Chrome headless com tela e microfone falsos: grava com pausa e uma área e confere os arquivos no ffprobe
+netlify deploy --build --prod
+```
 
 ## Licença
 

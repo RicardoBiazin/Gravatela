@@ -28,6 +28,9 @@ class TesteVersao(unittest.TestCase):
         self.assertEqual(re.findall(r"'(?:File|Product)Version', '([\d.]+)'", versao_txt), [VERSAO, VERSAO])
         manifest = (RAIZ / "Gravatela.manifest").read_text(encoding="utf-8")
         self.assertIn(f'version="{VERSAO}.0"', manifest)
+        import json
+        web = json.loads((RAIZ / "web" / "package.json").read_text(encoding="utf-8"))
+        self.assertEqual(web["version"], VERSAO)
 
     def test_cli_versao(self):
         r = subprocess.run([sys.executable, str(RAIZ / "app.py"), "--versao"], capture_output=True, text=True,

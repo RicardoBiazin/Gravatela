@@ -1,0 +1,21 @@
+{
+  "name": "gravatela-web",
+  "private": true,
+  "version": "0.3.0",
+  "description": "Gravatela no navegador: grava a tela com o áudio do PC e o microfone, sem enviar nada para servidor.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4180 --strictPort",
+    "test": "node --test \"test/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "fumaca": "node scripts/fumaca.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.1"
+  }
+}

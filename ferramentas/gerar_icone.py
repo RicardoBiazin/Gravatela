@@ -1,4 +1,4 @@
-"""Gera recursos/gravatela.ico a partir de desenho em código (um monitor com o ponto vermelho de gravar).
+"""Gera recursos/gravatela.ico e web/public/favicon.svg (um monitor com o ponto vermelho de gravar).
 
     .venv\\Scripts\\python.exe ferramentas\\gerar_icone.py
 """
@@ -12,6 +12,15 @@ from PySide6.QtCore import QRectF, Qt  # noqa: E402
 from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter, QPen  # noqa: E402
 
 RAIZ = Path(__file__).resolve().parents[1]
+
+# O mesmo desenho de desenhar(), em SVG, para o site.
+SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<rect x="2" y="2" width="60" height="60" rx="14" fill="#202631"/>
+<rect x="10" y="13" width="44" height="30" rx="4" fill="none" stroke="#e8eaed" stroke-width="4"/>
+<line x1="24" y1="51" x2="40" y2="51" stroke="#e8eaed" stroke-width="4"/>
+<circle cx="32" cy="28" r="8" fill="#ea4335"/>
+</svg>
+"""
 
 
 def desenhar(tam: int) -> QImage:
@@ -44,6 +53,10 @@ def main() -> int:
     if not desenhar(256).save(str(destino), "ICO"):
         print("ERRO: o Qt não gravou o .ico (plugin imageformats/qico ausente?)")
         return 1
+    publico = RAIZ / "web" / "public"
+    if publico.parent.is_dir():
+        publico.mkdir(exist_ok=True)
+        (publico / "favicon.svg").write_text(SVG, encoding="utf-8")
     print(destino)
     return 0
 

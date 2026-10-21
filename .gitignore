@@ -10,3 +10,9 @@ dist-*/
 
 # Gravações de teste
 *.mp4
+
+# Web
+web/node_modules/
+web/dist/
+.netlify/
+web/.netlify/

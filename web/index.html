@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Gravatela: grava a tela com o áudio do PC e o microfone direto no navegador. Nada é enviado para servidor.">
+  <title>Gravatela</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script type="module" src="/src/main.ts"></script>
+</head>
+<body>
+  <header class="topo">
+    <div class="marca"><img src="/favicon.svg" alt="" width="28" height="28"><strong>Gravatela</strong>
+      <span class="versao" id="versao"></span></div>
+    <span class="discreto">Grava a tela com o áudio do PC. O vídeo fica no seu computador: nada é enviado para servidor.</span>
+  </header>
+
+  <main>
+    <div id="aviso" class="aviso" hidden></div>
+
+    <section class="painel" id="painel-opcoes">
+      <h2>Opções</h2>
+      <div class="grade-opcoes">
+        <label><input type="checkbox" id="ck-audio-pc" checked> Áudio do PC</label>
+        <label><input type="checkbox" id="ck-microfone"> Microfone</label>
+        <label><input type="checkbox" id="ck-cursor" checked> Mostrar o cursor</label>
+        <label><input type="checkbox" id="ck-area"> Gravar só uma área</label>
+        <label>Fluidez
+          <select id="cb-fps">
+            <option value="15">15 quadros/s</option>
+            <option value="24">24 quadros/s</option>
+            <option value="30" selected>30 quadros/s</option>
+            <option value="60">60 quadros/s</option>
+          </select>
+        </label>
+      </div>
+      <p class="discreto" id="dica-audio">Para gravar o áudio do PC, escolha <strong>Tela inteira</strong> (ou uma aba) na janela do
+        navegador e marque <strong>Compartilhar áudio do sistema</strong>.</p>
+    </section>
+
+    <section class="painel centro" id="painel-controle">
+      <div class="tempo" id="tempo">00:00:00</div>
+      <div class="niveis" id="niveis" hidden>
+        <label>PC <meter id="nivel-pc" min="0" max="1" low="0.6" high="0.9" optimum="0.3" value="0"></meter></label>
+        <label>Mic <meter id="nivel-microfone" min="0" max="1" low="0.6" high="0.9" optimum="0.3" value="0"></meter></label>
+      </div>
+      <div class="linha centro">
+        <button class="botao grande" id="bt-gravar" type="button">●&nbsp; Gravar</button>
+        <button class="botao grande secundario" id="bt-pausar" type="button" disabled>❚❚&nbsp; Pausar</button>
+      </div>
+      <p class="discreto">Atalhos com esta aba em foco: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F9</kbd> grava/para ·
+        <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F10</kbd> pausa/continua</p>
+      <p class="estado" id="estado"></p>
+    </section>
+
+    <section class="painel" id="painel-previa" hidden>
+      <h2 id="titulo-previa">Prévia</h2>
+      <p class="discreto" id="dica-area" hidden>Arraste sobre a prévia para escolher a área. <kbd>Esc</kbd> limpa.</p>
+      <div class="previa">
+        <video id="previa" muted playsinline></video>
+        <div class="camada" id="camada"><div class="caixa" id="caixa" hidden></div></div>
+      </div>
+      <div class="linha" id="acoes-area" hidden>
+        <button class="botao" id="bt-comecar" type="button" disabled>Começar a gravar</button>
+        <button class="botao secundario" id="bt-cancelar" type="button">Cancelar</button>
+        <span class="discreto" id="tamanho-area"></span>
+      </div>
+    </section>
+
+    <section class="painel" id="painel-resultado" hidden>
+      <h2>Gravação pronta</h2>
+      <video id="resultado" controls playsinline></video>
+      <div class="linha">
+        <a class="botao" id="lk-baixar" download>Baixar de novo</a>
+        <span class="discreto" id="info-resultado"></span>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    Gravatela · <a href="https://github.com/RicardoBiazin/Gravatela" rel="noopener">código e versão para Windows</a>
+  </footer>
+</body>
+</html>
