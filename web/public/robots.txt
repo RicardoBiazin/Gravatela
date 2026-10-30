@@ -1,2 +1,5 @@
 User-agent: *
+Allow: /sobre/
 Disallow: /
+
+Sitemap: https://gravatela.biazin.com.br/sitemap.xml

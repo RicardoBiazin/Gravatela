@@ -1,0 +1,41 @@
+/* Landing /sobre/ do Gravatela: página estática, indexável e fora do portão anti-robô. */
+:root {
+  --fundo: #f6f7f9;
+  --cartao: #ffffff;
+  --texto: #1b1f24;
+  --discreto: #5b6470;
+  --borda: #d7dce2;
+  --primaria: #d93025;
+  --primaria-texto: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #0f1216;
+    --cartao: #171b21;
+    --texto: #e6e9ee;
+    --discreto: #9aa4b1;
+    --borda: #2c333d;
+    --primaria: #ea4335;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--fundo); color: var(--texto); }
+a { color: var(--primaria); }
+code { font-size: 0.92em; }
+.topo { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--cartao); border-bottom: 1px solid var(--borda); }
+.marca { display: flex; align-items: center; gap: 8px; font-size: 18px; color: var(--texto); text-decoration: none; }
+main { max-width: 820px; margin: 0 auto; padding: 16px; }
+section { background: var(--cartao); border: 1px solid var(--borda); border-radius: 12px; padding: 16px 20px; margin-bottom: 14px; }
+h1 { font-size: clamp(26px, 5vw, 36px); line-height: 1.2; margin: 6px 0 12px; }
+h2 { font-size: 20px; margin: 0 0 10px; }
+.lead { font-size: 18px; color: var(--discreto); }
+.destaque { text-align: center; }
+.botao { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--primaria); background: var(--primaria); color: var(--primaria-texto); font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none; }
+.botao.grande { font-size: 18px; padding: 12px 26px; }
+.recursos { padding-left: 20px; margin: 0; }
+.recursos li { margin: 4px 0; }
+details { border-top: 1px solid var(--borda); padding: 10px 0; }
+details:first-of-type { border-top: 0; }
+summary { cursor: pointer; font-weight: 600; }
+details p { margin: 8px 0 0; }
+.rodape { display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: center; padding: 18px 16px 28px; color: var(--discreto); font-size: 14px; }

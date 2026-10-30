@@ -13,6 +13,8 @@
 [build.environment]
   NODE_VERSION = "24"
 
+# O portão também põe o X-Robots-Tag noindex em tudo que deixa passar, menos nos
+# livres (robots.txt, sitemap.xml, ícones e a landing indexável /sobre/).
 [[edge_functions]]
   function = "portao"
   path = "/*"
@@ -27,7 +29,6 @@
     Permissions-Policy = "display-capture=(self), microphone=(self), camera=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()"
     Cross-Origin-Opener-Policy = "same-origin"
     Strict-Transport-Security = "max-age=31536000"
-    X-Robots-Tag = "noindex, nofollow"
 
 [[headers]]
   for = "/assets/*"

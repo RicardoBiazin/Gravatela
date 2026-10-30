@@ -138,11 +138,19 @@ test("Edge Function: desafio, verificação, cookie e passagem", { timeout: 60_0
   r = await portao(new Request("https://site.exemplo/__portao/desafio.js"), contexto().ctx);
   assert.equal(r.status, 200);
   assert.match(r.headers.get("content-type")!, /javascript/);
-  // 4. robots.txt e os icones passam (o navegador os pede sem cookie).
-  for (const livre of ["/robots.txt", "/favicon.svg", "/favicon.ico"]) {
+  // 4. robots.txt, sitemap, icones e a landing /sobre/ passam sem cookie, e sem noindex.
+  for (const livre of ["/robots.txt", "/sitemap.xml", "/favicon.svg", "/favicon.ico", "/sobre", "/sobre/",
+    "/sobre/index.html", "/sobre/sobre.css"]) {
     c = contexto();
-    await portao(new Request("https://site.exemplo" + livre), c.ctx);
+    r = await portao(new Request("https://site.exemplo" + livre, { headers: { "user-agent": "Googlebot/2.1" } }), c.ctx);
     assert.equal(c.chamou(), true, livre);
+    assert.equal(r.headers.get("x-robots-tag"), null, `${livre} indexável`);
+  }
+  // ...mas so' os arquivos exatos da landing: o resto continua barrado.
+  for (const preso of ["/sobre/../assets/x.js", "/sobre/outra.html", "/sobrex", "/sitemap.xml.js"]) {
+    c = contexto();
+    await portao(new Request("https://site.exemplo" + preso, { headers: { "user-agent": "Googlebot/2.1" } }), c.ctx);
+    assert.equal(c.chamou(), false, preso);
   }
   c = contexto();
   await portao(new Request("https://site.exemplo/favicon.svg/../assets/x.js"), c.ctx);
@@ -172,6 +180,7 @@ test("Edge Function: desafio, verificação, cookie e passagem", { timeout: 60_0
     { headers: { "user-agent": UA, cookie: `gt_passe=${passe}` } }), c.ctx);
   assert.equal(c.chamou(), true);
   assert.equal(await r.text(), "APP");
+  assert.match(r.headers.get("x-robots-tag")!, /noindex/, "o app continua fora dos buscadores");
   // 8. Mesmo cookie noutro navegador: volta o desafio.
   c = contexto();
   r = await portao(new Request("https://site.exemplo/", { headers: { ...NAVEGAR, "user-agent": "Robo/1.0", cookie: `gt_passe=${passe}` } }), c.ctx);

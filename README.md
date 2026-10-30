@@ -66,7 +66,7 @@ build.bat
 - **Testes.** Os testes gravam a tela de verdade por alguns segundos, mas não tocam som. As preferências vão para um `.ini` temporário (`GRAVATELA_CONFIG`), nunca para o registro do usuário.
 - **Teste do atalho.** Um dos testes abre por 2 s uma janela de verdade. Ele confere se o atalho fica registrado no Windows, se a mensagem chega à janela e se fechar a janela libera o atalho.
 - **Build.** O `build.bat` roda a suíte, gera `dist\Gravatela.exe` e executa `Gravatela.exe --autoverificacao`. Essa autoverificação grava 2 s num arquivo temporário, com 1 s de pausa no meio, e confere a duração do vídeo e do áudio. O log fica em `%TEMP%\gravatela_autoverificacao.log`.
-- **Versão.** A versão fica em três lugares: `gravatela/__init__.py`, `versao.txt` e `Gravatela.manifest`. Um teste confere se os três batem.
+- **Versão.** A versão fica em quatro lugares: `gravatela/__init__.py`, `versao.txt`, `Gravatela.manifest` e `web/package.json`. Os testes do desktop e da web conferem se batem.
 
 ## Versão web
 
@@ -74,7 +74,11 @@ https://gravatela.biazin.com.br. A pasta é `web/`: Vite + TypeScript, site est�
 
 A gravação acontece inteira no navegador, com `getDisplayMedia` + `MediaRecorder`. Nenhum vídeo passa por servidor.
 
-**Portão anti-robô.** É uma Edge Function do Netlify (`web/netlify/edge-functions/portao.ts`, a mesma do ValidaURL). Quem chega sem o cookie `gt_passe` recebe uma página em que o navegador resolve uma prova de trabalho (~1 s) e ganha o cookie, que vale 7 dias e só para aquele navegador. Pedido de arquivo sem o cookie leva 403. Não usa serviço de terceiros. O site também fica fora dos buscadores (`robots.txt` e `noindex`). O segredo fica na variável `PORTAO_SEGREDO` do Netlify; sem ela, o site publicado responde 500 de propósito. A versão web tem quase tudo do desktop: áudio do PC, microfone mixado (WebAudio), pausa, área da tela, fluidez e cursor.
+**Portão anti-robô.** É uma Edge Function do Netlify (`web/netlify/edge-functions/portao.ts`, a mesma do ValidaURL). Quem chega sem o cookie `gt_passe` recebe uma página em que o navegador resolve uma prova de trabalho (~1 s) e ganha o cookie, que vale 7 dias e só para aquele navegador. Pedido de arquivo sem o cookie leva 403. Não usa serviço de terceiros. O app também fica fora dos buscadores (`robots.txt` e `noindex`). O segredo fica na variável `PORTAO_SEGREDO` do Netlify; sem ela, o site publicado responde 500 de propósito. A versão web tem quase tudo do desktop: áudio do PC, microfone mixado (WebAudio), pausa, área da tela, fluidez e cursor.
+
+**Página de apresentação (SEO).** A única parte indexável é a landing estática https://gravatela.biazin.com.br/sobre/ (`web/public/sobre/`, com JSON-LD `WebApplication` + `FAQPage`). Ela, o `robots.txt` (`Allow: /sobre/`, `Disallow: /`) e o `sitemap.xml` passam pelo portão sem cookie; o resto continua protegido e com `X-Robots-Tag: noindex`, que agora é posto pelo próprio portão (um cabeçalho em `/*` no `netlify.toml` também cairia na landing).
+
+**Histórico da web.** 0.3.0: versão web. 0.4.0: portão anti-robô e domínio próprio. 0.4.1: landing indexável `/sobre/`, `sitemap.xml` e `robots.txt` com `Allow: /sobre/`.
 
 **Diferenças em relação ao desktop:**
 - **Áudio do PC:**
