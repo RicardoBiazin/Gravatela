@@ -78,7 +78,7 @@ A gravação acontece inteira no navegador, com `getDisplayMedia` + `MediaRecord
 
 **Página de apresentação (SEO).** A única parte indexável é a landing estática https://gravatela.biazin.com.br/sobre/ (`web/public/sobre/`, com JSON-LD `WebApplication` + `FAQPage`). Ela, o `robots.txt` (`Allow: /sobre/`, `Disallow: /`) e o `sitemap.xml` passam pelo portão sem cookie; o resto continua protegido e com `X-Robots-Tag: noindex`, que agora é posto pelo próprio portão (um cabeçalho em `/*` no `netlify.toml` também cairia na landing).
 
-**Histórico da web.** 0.3.0: versão web. 0.4.0: portão anti-robô e domínio próprio. 0.4.1: landing indexável `/sobre/`, `sitemap.xml` e `robots.txt` com `Allow: /sobre/`. 0.4.2: CSP libera o Cloudflare Web Analytics (cookieless) injetado pelo Netlify.
+**Histórico da web.** 0.3.0: versão web. 0.4.0: portão anti-robô e domínio próprio. 0.4.1: landing indexável `/sobre/`, `sitemap.xml` e `robots.txt` com `Allow: /sobre/`. Ajustes de hospedagem sem mudar a versão (que acompanha a do desktop): a CSP libera o Cloudflare Web Analytics (sem cookie) injetado pelo Netlify, e o `robots.txt` libera o `sitemap.xml`.
 
 **Diferenças em relação ao desktop:**
 - **Áudio do PC:**
