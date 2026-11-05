@@ -103,3 +103,7 @@ netlify deploy --build --prod
 ## Licença
 
 MIT. O executável inclui o FFmpeg (via PyAV), que é LGPL/GPL, e o x264, que é GPL.
+
+## Código de conduta
+
+Veja [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
