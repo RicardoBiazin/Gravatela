@@ -35,6 +35,8 @@ main { max-width: 960px; margin: 0 auto; padding: 16px; }
 .centro { text-align: center; justify-content: center; }
 .grade-opcoes { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
 .grade-opcoes label { display: inline-flex; align-items: center; gap: 6px; }
+/* Celular: só grava o microfone, então as opções de tela somem. */
+.celular .so-computador { display: none; }
 select { font: inherit; color: var(--texto); background: var(--fundo); border: 1px solid var(--borda); border-radius: 8px; padding: 5px 8px; }
 .linha { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 10px; }
 .botao { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--primaria); background: var(--primaria); color: var(--primaria-texto); font: inherit; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer; text-decoration: none; }

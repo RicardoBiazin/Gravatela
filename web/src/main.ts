@@ -1,6 +1,6 @@
 import "./estilo.css";
 import { type Recorte, recortar, selecionarNaPrevia } from "./area.ts";
-import { type Retangulo, acaoDoAtalho, formatarTamanho, formatarTempo, nomeArquivo } from "./formato.ts";
+import { type Retangulo, acaoDoAtalho, ehCelular, formatarTamanho, formatarTempo, nomeArquivo } from "./formato.ts";
 import { Gravador, bitsDeVideo } from "./gravador.ts";
 import { Mixer } from "./mixer.ts";
 
@@ -50,8 +50,14 @@ function avisar(texto: string): void {
 }
 const ehFirefox = /firefox/i.test(navigator.userAgent);
 const temCaptura = !!navigator.mediaDevices?.getDisplayMedia;
-if (!temCaptura) {
-  avisar("Este navegador não permite gravar a tela (a maioria dos celulares não permite). Use o Chrome ou o Edge no computador.");
+const temMicrofone = !!navigator.mediaDevices?.getUserMedia;
+const modoCelular = ehCelular(navigator.userAgent, matchMedia("(pointer: coarse)").matches);
+const podeGravar = modoCelular ? temMicrofone : temCaptura;
+document.body.classList.toggle("celular", modoCelular);
+if (modoCelular) {
+  avisar("No celular a gravação é só pelo microfone: a tela e o áudio do PC só gravam no computador.");
+} else if (!temCaptura) {
+  avisar("Este navegador não permite gravar a tela. Use o Chrome ou o Edge no computador.");
 } else if (ehFirefox) {
   avisar("No Firefox o áudio do PC não é gravado: só a tela e o microfone. Para gravar o áudio do PC, use o Chrome ou o Edge.");
 }
@@ -66,7 +72,7 @@ function mostrarFase(nova: Fase): void {
   const gravando = nova === "gravando";
   const pausado = gravando && !!gravador?.pausado;
   $<HTMLButtonElement>("bt-gravar").innerHTML = gravando ? "■&nbsp; Parar" : "●&nbsp; Gravar";
-  $<HTMLButtonElement>("bt-gravar").disabled = !temCaptura || nova === "ocupado" || nova === "area";
+  $<HTMLButtonElement>("bt-gravar").disabled = !podeGravar || nova === "ocupado" || nova === "area";
   $<HTMLButtonElement>("bt-pausar").disabled = !gravando;
   $<HTMLButtonElement>("bt-pausar").innerHTML = pausado ? "▶&nbsp; Continuar" : "❚❚&nbsp; Pausar";
   for (const id of [...OPCOES, "cb-fps"]) $<HTMLInputElement>(id).disabled = nova !== "pronto";
@@ -181,6 +187,43 @@ async function escolherTela(): Promise<void> {
   await gravar(null);
 }
 
+/** Celular: só microfone. O AudioContext nasce antes de qualquer await, dentro do toque (iOS). */
+async function gravarCelular(): Promise<void> {
+  limparResultado();
+  mixer = new Mixer();
+  mostrarFase("ocupado");
+  estado("");
+  try {
+    microfone = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    });
+  } catch (e) {
+    liberar();
+    mostrarFase("pronto");
+    const nome = (e as DOMException).name;
+    estado(nome === "NotAllowedError" || nome === "SecurityError"
+      ? "Permissão do microfone negada. Libere o microfone para este site nas configurações do navegador."
+      : `Não foi possível usar o microfone: ${(e as Error).message}`);
+    return;
+  }
+  mixer.adicionar("microfone", microfone.getAudioTracks()[0]);
+  await mixer.retomar();
+  try {
+    gravador = new Gravador(new MediaStream([mixer.faixa]), 0, "audio");
+    gravador.iniciar();
+  } catch (e) {
+    gravador = null;
+    liberar();
+    mostrarFase("pronto");
+    estado(`Não foi possível começar a gravar: ${(e as Error).message}`);
+    return;
+  }
+  inicioGravacao = new Date();
+  relogio = setInterval(atualizar, 200);
+  mostrarFase("gravando");
+  atualizar();
+}
+
 async function gravar(regiao: Retangulo | null): Promise<void> {
   if (!tela) return;
   mostrarFase("ocupado");
@@ -263,7 +306,7 @@ function alternarGravacao(): void {
   if (fase === "gravando") void parar();
   else if (fase === "area") {
     if (area) void gravar(area);
-  } else if (fase === "pronto" && temCaptura) void escolherTela();
+  } else if (fase === "pronto" && podeGravar) void (modoCelular ? gravarCelular() : escolherTela());
 }
 
 function alternarPausa(): void {

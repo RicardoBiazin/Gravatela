@@ -36,8 +36,24 @@ export const FORMATOS: ReadonlyArray<{ mime: string; extensao: string }> = [
   { mime: "video/webm", extensao: "webm" },
 ];
 
-export function escolherFormato(suporta: (mime: string) => boolean): { mime: string; extensao: string } | null {
-  return FORMATOS.find((f) => suporta(f.mime)) ?? null;
+/** Só áudio (celular): M4A no Safari, WebM/Opus no Chrome. */
+export const FORMATOS_AUDIO: ReadonlyArray<{ mime: string; extensao: string }> = [
+  { mime: "audio/mp4", extensao: "m4a" },
+  { mime: "audio/webm;codecs=opus", extensao: "webm" },
+  { mime: "audio/webm", extensao: "webm" },
+];
+
+export function escolherFormato(suporta: (mime: string) => boolean, tipo: "video" | "audio" = "video"):
+  { mime: string; extensao: string } | null {
+  return (tipo === "audio" ? FORMATOS_AUDIO : FORMATOS).find((f) => suporta(f.mime)) ?? null;
+}
+
+/**
+ * Celular ou tablet. Captura de tela não existe no iOS e é instável no Android, então
+ * esses aparelhos gravam só pelo microfone.
+ */
+export function ehCelular(ua: string, ponteiroGrosso: boolean): boolean {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || ponteiroGrosso;
 }
 
 /** Retângulo de dois cantos quaisquer (arrasto em qualquer direção). */

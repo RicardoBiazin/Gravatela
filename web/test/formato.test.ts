@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import {
-  Cronometro, FORMATOS, acaoDoAtalho, escolherFormato, formatarTamanho, formatarTempo, nomeArquivo, pico,
-  previaParaVideo, retanguloDosCantos,
+  Cronometro, FORMATOS, FORMATOS_AUDIO, acaoDoAtalho, ehCelular, escolherFormato, formatarTamanho, formatarTempo,
+  nomeArquivo, pico, previaParaVideo, retanguloDosCantos,
 } from "../src/formato.ts";
 import { bitsDeVideo } from "../src/gravador.ts";
 
@@ -103,4 +103,21 @@ test("versão do web igual à do desktop", () => {
   const web = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
   const py = readFileSync(new URL("../../gravatela/__init__.py", import.meta.url), "utf8");
   assert.equal(/VERSAO = "([\d.]+)"/.exec(py)?.[1], web);
+});
+
+test("celular: escolhe só formatos de áudio", () => {
+  assert.equal(escolherFormato(() => true, "audio")?.extensao, "m4a");
+  assert.equal(escolherFormato((m) => m === "audio/webm;codecs=opus", "audio")?.extensao, "webm");
+  assert.equal(escolherFormato((m) => m.startsWith("video/"), "audio"), null);
+  assert.ok(FORMATOS_AUDIO.every((f) => f.mime.startsWith("audio/")));
+});
+
+test("ehCelular: UA de celular ou ponteiro grosso (toque)", () => {
+  const iphone = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148";
+  const chrome = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36";
+  assert.equal(ehCelular(iphone, false), true);
+  assert.equal(ehCelular("Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/140 Mobile Safari/537.36", false), true);
+  assert.equal(ehCelular("Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X)", false), true);
+  assert.equal(ehCelular(chrome, false), false);
+  assert.equal(ehCelular(chrome, true), true, "tela sensível ao toque sem mouse");
 });

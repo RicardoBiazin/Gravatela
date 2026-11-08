@@ -74,11 +74,13 @@ https://gravatela.biazin.com.br. A pasta é `web/`: Vite + TypeScript, site est�
 
 A gravação acontece inteira no navegador, com `getDisplayMedia` + `MediaRecorder`. Nenhum vídeo passa por servidor.
 
+**No celular** (iPhone, iPad e Android, detectados pelo navegador) a gravação é **só pelo microfone**, em M4A ou WebM. A captura de tela não existe no iOS e é instável no Android, então a tela e o áudio do PC ficam só no computador. Não testei em aparelho real: a verificação foi com o navegador simulando um celular, e com a API de captura removida para imitar o iOS.
+
 **Portão anti-robô.** É uma Edge Function do Netlify (`web/netlify/edge-functions/portao.ts`, a mesma do ValidaURL). Quem chega sem o cookie `gt_passe` recebe uma página em que o navegador resolve uma prova de trabalho (~1 s) e ganha o cookie, que vale 7 dias e só para aquele navegador. Pedido de arquivo sem o cookie leva 403. Não usa serviço de terceiros. O app também fica fora dos buscadores (`robots.txt` e `noindex`). O segredo fica na variável `PORTAO_SEGREDO` do Netlify; sem ela, o site publicado responde 500 de propósito. A versão web tem quase tudo do desktop: áudio do PC, microfone mixado (WebAudio), pausa, área da tela, fluidez e cursor.
 
 **Página de apresentação (SEO).** A única parte indexável é a landing estática https://gravatela.biazin.com.br/sobre/ (`web/public/sobre/`, com JSON-LD `WebApplication` + `FAQPage`). Ela, o `robots.txt` (`Allow: /sobre/`, `Disallow: /`) e o `sitemap.xml` passam pelo portão sem cookie; o resto continua protegido e com `X-Robots-Tag: noindex`, que agora é posto pelo próprio portão (um cabeçalho em `/*` no `netlify.toml` também cairia na landing).
 
-**Histórico da web.** 0.3.0: versão web. 0.4.0: portão anti-robô e domínio próprio. 0.4.1: landing indexável `/sobre/`, `sitemap.xml` e `robots.txt` com `Allow: /sobre/`. Ajustes de hospedagem sem mudar a versão (que acompanha a do desktop): a CSP libera o Cloudflare Web Analytics (sem cookie) injetado pelo Netlify, e o `robots.txt` libera o `sitemap.xml`.
+**Histórico da web.** 0.3.0: versão web. 0.4.0: portão anti-robô e domínio próprio. 0.4.1: landing indexável `/sobre/`, `sitemap.xml` e `robots.txt` com `Allow: /sobre/`. 0.5.0: modo celular (só microfone). Ajustes de hospedagem sem mudar a versão (que acompanha a do desktop): a CSP libera o Cloudflare Web Analytics (sem cookie) injetado pelo Netlify, e o `robots.txt` libera o `sitemap.xml`.
 
 **Diferenças em relação ao desktop:**
 - **Áudio do PC:**

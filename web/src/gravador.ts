@@ -11,14 +11,17 @@ export class Gravador {
   private terminou: Promise<Blob>;
   bytes = 0;
 
-  constructor(fluxo: MediaStream, bitsVideo: number) {
-    const formato = escolherFormato((m) => MediaRecorder.isTypeSupported(m));
-    if (!formato) throw new Error("Este navegador não grava vídeo (MediaRecorder sem MP4 nem WebM).");
+  constructor(fluxo: MediaStream, bitsVideo: number, tipo: "video" | "audio" = "video") {
+    const formato = escolherFormato((m) => MediaRecorder.isTypeSupported(m), tipo);
+    if (!formato) {
+      throw new Error(tipo === "audio" ? "Este navegador não grava áudio (MediaRecorder indisponível)."
+        : "Este navegador não grava vídeo (MediaRecorder sem MP4 nem WebM).");
+    }
     this.mime = formato.mime;
     this.extensao = formato.extensao;
     this.gravador = new MediaRecorder(fluxo, {
       mimeType: formato.mime,
-      videoBitsPerSecond: bitsVideo,
+      ...(tipo === "video" ? { videoBitsPerSecond: bitsVideo } : {}),
       audioBitsPerSecond: 160_000,
     });
     this.gravador.addEventListener("dataavailable", (e) => {

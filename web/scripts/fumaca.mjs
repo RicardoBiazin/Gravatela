@@ -4,6 +4,8 @@
  *   node scripts/fumaca.mjs                       contra o `vite preview` (http://localhost:4180)
  *   node scripts/fumaca.mjs --url=https://...     contra o site publicado
  *   node scripts/fumaca.mjs --so-pagina           só carrega a página (sem gravar)
+ *   node scripts/fumaca.mjs --celular             simula um Android sem API de captura de tela:
+ *                                                 o modo celular tem de gravar só o microfone
  *
  * O navegador abre com tela e microfone falsos (--use-fake-*-for-media-stream), então a
  * gravação acontece de verdade sem pedir nada a ninguém. Confere: versão na tela, sem
@@ -21,6 +23,8 @@ import { join } from "node:path";
 const arg = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split("=").slice(1).join("=");
 const URL_APP = (arg("url") ?? "http://localhost:4180").replace(/\/?$/, "/");
 const SO_PAGINA = process.argv.includes("--so-pagina");
+const CELULAR = process.argv.includes("--celular");
+const UA_CELULAR = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36";
 const versao = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
 const chrome = [process.env.CHROME, "C:/Program Files/Google/Chrome/Application/chrome.exe",
@@ -41,14 +45,16 @@ const ok = (cond, msg) => {
 const perfil = join(tmpdir(), "gravatela-fumaca-perfil");
 const downloads = mkdtempSync(join(tmpdir(), "gravatela-fumaca-"));
 rmSync(perfil, { recursive: true, force: true });
-const nav = spawn(chrome, ["--headless=new", "--remote-debugging-port=9335", `--user-data-dir=${perfil}`, "--no-first-run",
+// Porta sorteada: outra instância do Chrome na mesma porta faz a fumaça falar com o navegador errado.
+const porta = 9400 + Math.floor(Math.random() * 500);
+const nav = spawn(chrome, ["--headless=new", `--remote-debugging-port=${porta}`, `--user-data-dir=${perfil}`, "--no-first-run",
   "--no-default-browser-check", "--disable-component-update", "--window-size=1280,900",
   "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--autoplay-policy=no-user-gesture-required",
   "about:blank"], { stdio: "ignore" });
 let alvo;
 for (let i = 0; i < 50 && !alvo; i++) {
   try {
-    alvo = (await (await fetch("http://127.0.0.1:9335/json")).json()).find((t) => t.type === "page");
+    alvo = (await (await fetch(`http://127.0.0.1:${porta}/json`)).json()).find((t) => t.type === "page");
   } catch { /* abrindo */ }
   await espera(200);
 }
@@ -108,14 +114,13 @@ function sondar(arquivo) {
   const saida = execFileSync("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type,codec_name,width,height:format=duration",
     "-of", "json", arquivo], { encoding: "utf8" });
   const j = JSON.parse(saida);
-  // O MP4 do MediaRecorder às vezes não traz duration no format; aí decodifica para medir.
+  // O arquivo do MediaRecorder às vezes não traz duration no format (WebM não traz); aí
+  // a duração é o fim do último pacote de qualquer faixa.
   let duracao = Number(j.format?.duration);
   if (!Number.isFinite(duracao)) {
-    const t = execFileSync("ffprobe", ["-v", "error", "-select_streams", "v:0", "-count_packets", "-show_entries",
-      "stream=nb_read_packets,r_frame_rate", "-of", "json", arquivo], { encoding: "utf8" });
-    const s = JSON.parse(t).streams[0];
-    const [n, d] = s.r_frame_rate.split("/").map(Number);
-    duracao = Number(s.nb_read_packets) / (n / d);
+    const t = execFileSync("ffprobe", ["-v", "error", "-show_entries", "packet=pts_time,duration_time", "-of", "csv=p=0",
+      arquivo], { encoding: "utf8" });
+    duracao = Math.max(...t.split("\n").filter(Boolean).map((l) => l.split(",").map(Number).reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0)));
   }
   return { duracao, streams: j.streams };
 }
@@ -140,15 +145,52 @@ try {
     const js = await fetch(new URL("assets/", URL_APP), { headers: { "sec-fetch-mode": "cors" } });
     ok(js.status === 403, `arquivo sem passe recusado (${js.status})`);
   }
+  if (CELULAR) {
+    await cdp("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+    await cdp("Emulation.setUserAgentOverride", { userAgent: UA_CELULAR });
+    // iOS e a maioria dos navegadores móveis não têm getDisplayMedia: tira a API para imitar.
+    await cdp("Page.addScriptToEvaluateOnNewDocument", {
+      source: "try { delete MediaDevices.prototype.getDisplayMedia; } catch (e) {}",
+    });
+  }
   await cdp("Page.navigate", { url: URL_APP });
   // O portão (se houver) resolve a prova de trabalho e recarrega sozinho.
   ok(await aguardar("!!document.getElementById('versao')?.textContent", 60000), "app carregou (portão resolvido, se houver)");
   ok(await avaliar("document.getElementById('versao').textContent") === versao, `versão ${versao} na tela`);
   ok(await avaliar("!document.getElementById('bt-gravar').disabled"), "botão Gravar habilitado");
+  if (CELULAR) console.log(`       (estado na tela: "${await avaliar("document.getElementById('estado').textContent")}")`);
   const mp4 = await avaliar("MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.640028,mp4a.40.2')");
   console.log(`       (navegador ${mp4 ? "grava MP4" : "não grava MP4; vai WebM"})`);
 
-  if (!SO_PAGINA) {
+  if (CELULAR && !SO_PAGINA) {
+    // Celular: só microfone. Sem opções de tela, grava, pausa e confere um arquivo só de áudio.
+    ok(await avaliar("document.body.classList.contains('celular')"), "celular: modo detectado");
+    ok(await avaliar("getComputedStyle(document.getElementById('painel-opcoes')).display === 'none'"), "celular: sem opções de tela");
+    const antes = readdirSync(downloads);
+    await clicar("bt-gravar");
+    ok(await aguardar("document.getElementById('tempo').classList.contains('gravando')", 15000), "gravação do microfone começou");
+    await espera(1200);
+    ok(await avaliar("!document.getElementById('niveis').hidden"), "medidor do microfone visível");
+    await clicar("bt-pausar");
+    ok(await aguardar("document.getElementById('tempo').textContent.includes('pausado')", 3000), "pausou");
+    await espera(1200);
+    await clicar("bt-pausar");
+    await espera(1000);
+    await clicar("bt-gravar");
+    ok(await aguardar("!document.getElementById('painel-resultado').hidden", 15000), "gravação pronta");
+    const arquivo = await baixado(antes);
+    ok(!!arquivo, `arquivo baixado (${arquivo})`);
+    if (arquivo) {
+      ok(/Gravatela_\d{4}-\d\d-\d\d_\d\d-\d\d-\d\d\.(m4a|webm)$/.test(arquivo), "nome com extensão de áudio");
+      const s = sondar(arquivo);
+      const tipos = s.streams.map((x) => `${x.codec_type}:${x.codec_name}`);
+      console.log(`       ${tipos.join(", ")}; ${s.duracao.toFixed(2)} s`);
+      ok(tipos.length === 1 && tipos[0].startsWith("audio:"), "arquivo só de áudio (sem vídeo)");
+      ok(s.duracao > 1.8 && s.duracao < 3.2, `duração ~2,2 s, sem a pausa de 1,2 s (${s.duracao.toFixed(2)} s)`);
+    }
+  }
+
+  if (!SO_PAGINA && !CELULAR) {
     // 1) Tela + "áudio do PC" + microfone falsos, com uma pausa de 1,5 s no meio.
     await avaliar(`(() => { for (const [id, v] of [['ck-audio-pc', true], ['ck-microfone', true], ['ck-area', false]]) {
       const c = document.getElementById(id); c.checked = v; c.dispatchEvent(new Event('change')); } })()`);
@@ -225,7 +267,9 @@ try {
   if (erros.length) console.log("Erros do navegador:", erros);
 } finally {
   ws.close();
-  nav.kill();
+  // No Windows, kill() só derruba o processo pai; o Chrome deixa filhos rodando.
+  if (process.platform === "win32") execFileSync("taskkill", ["/pid", String(nav.pid), "/T", "/F"], { stdio: "ignore" });
+  else nav.kill();
   rmSync(downloads, { recursive: true, force: true });
 }
 console.log(falhas.length ? `\n${falhas.length} FALHA(S)` : "\nFUMAÇA OK");
