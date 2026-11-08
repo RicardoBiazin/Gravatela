@@ -1,0 +1,19 @@
+# Gravatela
+
+> Gravador de tela para Windows, de código aberto (MIT). Grava a tela com o áudio que sai do computador e, se quiser, o microfone, misturados na mesma faixa, e salva em .mp4 (H.264 + AAC). Tem pausa, atalhos globais, gravação de uma área da tela e codificação pela placa de vídeo quando disponível. Criado por Ricardo Biazin (biazin.com.br).
+
+Há também uma versão para navegador, que grava no próprio navegador. O áudio do PC só funciona no Chrome e no Edge. O aplicativo web é protegido contra robôs, então a descrição completa está na página de apresentação.
+
+## Apresentação
+
+- [Gravatela: apresentação e recursos](https://gravatela.biazin.com.br/sobre/): o que o programa faz, requisitos e como baixar.
+
+## Downloads e código
+
+- [Versão para Windows](https://github.com/RicardoBiazin/Gravatela/releases): executável Gravatela.exe, sem instalação.
+- [Código-fonte](https://github.com/RicardoBiazin/Gravatela): licença MIT.
+- [Página da ferramenta em biazin.com.br](https://biazin.com.br/ferramentas/gravatela/): descrição, requisitos e perguntas frequentes.
+
+## Autor
+
+- Ricardo Biazin, RVJV Soluções Corporativas (Florianópolis/SC). [LinkedIn](https://www.linkedin.com/in/ricardo-biazin/). [Outras ferramentas gratuitas](https://biazin.com.br/).

@@ -139,7 +139,7 @@ test("Edge Function: desafio, verificação, cookie e passagem", { timeout: 60_0
   assert.equal(r.status, 200);
   assert.match(r.headers.get("content-type")!, /javascript/);
   // 4. robots.txt, sitemap, icones e a landing /sobre/ passam sem cookie, e sem noindex.
-  for (const livre of ["/robots.txt", "/sitemap.xml", "/favicon.svg", "/favicon.ico", "/sobre", "/sobre/",
+  for (const livre of ["/robots.txt", "/llms.txt", "/sitemap.xml", "/favicon.svg", "/favicon.ico", "/sobre", "/sobre/",
     "/sobre/index.html", "/sobre/sobre.css"]) {
     c = contexto();
     r = await portao(new Request("https://site.exemplo" + livre, { headers: { "user-agent": "Googlebot/2.1" } }), c.ctx);

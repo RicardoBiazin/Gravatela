@@ -29,7 +29,7 @@ const DOMINIO_ANTIGO = "gravatela-212.netlify.app";
 
 // Livres sem cookie. A landing /sobre/ e' a unica parte indexavel do site (SEO):
 // so' os arquivos exatos dela, nada de "/sobre/*" (o app continua protegido).
-const LIVRES = /^\/(robots\.txt|sitemap\.xml|favicon\.svg|favicon\.ico|sobre|sobre\/|sobre\/index\.html|sobre\/sobre\.css)$/;
+const LIVRES = /^\/(robots\.txt|llms\.txt|sitemap\.xml|favicon\.svg|favicon\.ico|sobre|sobre\/|sobre\/index\.html|sobre\/sobre\.css)$/;
 
 // O X-Robots-Tag do app sai daqui, nao do netlify.toml: um cabecalho em "/*" la'
 // tambem cairia na /sobre/ e o Netlify nao deixa outra regra tirar o noindex.
