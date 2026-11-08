@@ -27,7 +27,9 @@ test("passe válido passa; adulterado, vencido ou de outro navegador não", asyn
   assert.equal(await verificarPasse("outro-segredo-qualquer-bem-longo", passe, UA, agora), false, "outro segredo");
   const [expira, sig] = passe.split(".");
   assert.equal(await verificarPasse(SEGREDO, `${Number(expira) + 999999}.${sig}`, UA, agora), false, "validade esticada");
-  const trocado = sig.slice(0, -1) + (sig.endsWith("A") ? "B" : "A");
+  // Troca um caractere do meio: o último de um base64url tem bits de folga e pode não mudar a assinatura.
+  const meio = Math.floor(sig.length / 2);
+  const trocado = sig.slice(0, meio) + (sig[meio] === "A" ? "B" : "A") + sig.slice(meio + 1);
   assert.equal(await verificarPasse(SEGREDO, `${expira}.${trocado}`, UA, agora), false, "assinatura trocada");
   for (const lixo of [null, "", "abc", "1.2", `${expira}.`, `.${sig}`, passe + "x"]) {
     assert.equal(await verificarPasse(SEGREDO, lixo, UA, agora), false, `lixo: ${lixo}`);
